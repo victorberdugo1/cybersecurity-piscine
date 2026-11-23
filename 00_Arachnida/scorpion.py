@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import os
+import time
 from PIL import Image
 from PIL.ExifTags import TAGS
 
@@ -8,63 +9,61 @@ IMG_EXTS = ('.jpg', '.jpeg', '.png', '.gif', '.bmp')
 
 
 def parse_metadata(filepath):
-    """Devuelve un diccionario con los metadatos o None si falla."""
+    """Devuelve dict con metadatos EXIF/chunks, o {} si no hay."""
+    metadata = {}
     try:
         with Image.open(filepath) as img:
-            metadata = {}
-            # PNG: la info está en img.info
             if img.format == 'PNG':
                 metadata.update(img.info)
-            # JPEG: los metadatos están en EXIF
             elif img.format == 'JPEG':
                 exif = img.getexif()
                 if exif:
                     metadata.update({TAGS.get(k, k): v for k, v in exif.items()})
-            return metadata
+            # GIF y BMP: no tienen EXIF estándar, se muestran solo datos básicos
     except Exception as e:
         print(f"Error leyendo {filepath}: {e}")
-        return None
+    return metadata
 
 
 def display(filepath):
-    metadata = parse_metadata(filepath)
-    if metadata is None:
+    ext = os.path.splitext(filepath)[1].lower()
+    if ext not in IMG_EXTS:
+        print(f"Extensión no soportada: {ext}")
         return
+
+    # Info básica: SIEMPRE se muestra
     print(f"FILE: {filepath}")
-    for key, value in metadata.items():
-        print(f"  {key}: {value}")
+    print(f"  Size: {os.path.getsize(filepath)} bytes")
+    print(f"  Created: {time.ctime(os.path.getctime(filepath))}")
+    print(f"  Modified: {time.ctime(os.path.getmtime(filepath))}")
 
-
-def delete(filepath):
     try:
         with Image.open(filepath) as img:
-            img.save(filepath, exif=b"")  # borra EXIF
-        print(f"Metadatos borrados: {filepath}")
+            print(f"  Format: {img.format}")
+            print(f"  Mode: {img.mode}")
+            print(f"  Dimensions: {img.width}x{img.height}")
     except Exception as e:
-        print(f"Error borrando {filepath}: {e}")
+        print(f"  Error abriendo imagen: {e}")
+        return
+
+    # Metadatos: solo si existen
+    metadata = parse_metadata(filepath)
+    if metadata:
+        print("  Metadata:")
+        for k, v in metadata.items():
+            print(f"    {k}: {v}")
+    else:
+        print("  Metadata: (none)")
 
 
 def main():
     p = argparse.ArgumentParser(description="Scorpion: metadatos de imágenes")
-    sub = p.add_subparsers(dest="command", required=True)
-
-    d = sub.add_parser("display", help="mostrar metadatos")
-    d.add_argument("files", nargs="+")
-
-    x = sub.add_parser("delete", help="borrar metadatos")
-    x.add_argument("file")
-
+    p.add_argument("files", nargs="+", help="Ficheros de imagen")
     args = p.parse_args()
 
-    if args.command == "display":
-        for f in args.files:
-            ext = os.path.splitext(f)[1].lower()
-            if ext not in IMG_EXTS:
-                print(f"Extensión no soportada: {ext}")
-                continue
-            display(f)
-    elif args.command == "delete":
-        delete(args.file)
+    for f in args.files:
+        display(f)
+        print()  # línea en blanco entre ficheros
 
 
 if __name__ == "__main__":
