@@ -1,0 +1,43 @@
+# ---- Entornos virtuales ----
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- Ficheros temporales de editores ----
+*.swp
+*.swo
+*~
+*.tmp
+*.bak
+.vscode/
+.idea/
+
+# ---- Salida del Spider (imágenes descargadas) ----
+data/
+imgs/
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+
+# ---- Sistema operativo ----
+.DS_Store
+Thumbs.db
+
+# ---- Logs ----
+*.log
